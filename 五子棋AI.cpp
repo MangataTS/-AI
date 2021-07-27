@@ -1,421 +1,314 @@
+/*
+〖开局〗在对局开始阶段形成的布局。一般指前3手棋形成的局面。
+〖连〗2枚以上的同色棋子在一条线上邻接成串。
+〖五连〗五枚同色棋子在一条线上邻接连串。
+〖长连〗五枚以上同色棋子在一条线上邻接成串。
+〖成五〗五连和长连的统称。
+〖威胁〗下一手可以成五或者活四的点。
+〖四〗五连去掉1子的棋型。
+〖活四〗有两个威胁的四。
+〖冲四〗只有一个威胁的四。												√ 
+〖死四〗不能成五的四连。
+〖三〗可以形成四再形成五的三枚同色棋子组成的棋型。
+〖活三〗再走一着可以形成活四的三。   									√
+〖连活三〗两端都是威胁的活三。简称“连三”。		 
+〖跳活三〗中间夹有一个威胁的活三。简称“跳三”。
+〖眠三〗再走一着可以形成冲四的三。
+〖死三〗不能成五的三。
+〖二〗可以形成三、四直至五的两枚同色棋子组成的棋型。
+〖活二〗再走一着可以形成活三的二。
+〖连活二〗连的活二。简称“连二”。
+〖跳活二〗中间隔有一个空点的活二。简称“跳二”。
+〖大跳活二〗中间隔有两个空点的活二。简称“大跳二”。
+〖眠二〗再走一着可以形成眠三的二。
+〖死二〗不能成五的二。
+〖先手〗对方必须应答的着法，相对于活三先手而言，冲四称为“绝对先手”。
+〖三三〗一子落下同时形成两个活三。也称“双三”。
+〖四四〗一子落下同时形成两个冲四。也称“双四”。
+〖四三〗一子落下同时形成一个冲四和一个活三。
+ */
+
 #include<cstdio>
 #include<cstring>
 #include<algorithm>
 using namespace std;
 
-#define bwin 1
-#define wwin -1
-#define noover 0
+const int N = 15;
 
-const int attack_key[6] ={0,10,100,1000,10000,999999};//分别对应着的是这个方向落子个数的进攻价值 
-const int defense_key[6] = {0,30,100,9999999,9999999,999999};//分别对应这是这个方向落子的防御价值 
-const int N = 7 + 1;
+int bord[N][N];//  0表示当前为空，1表示黑子，2表示白子
+int ai_ = 1;//ai_ = 1 表示的是AI先手
+int s0;
+bool IS_END = false; 
+
 int dx[8] = {0,-1,-1,-1,0,1,1,1};
 int dy[8] = {-1,-1,0,1,1,1,0,-1};
-int own = 0;
 
-int bord[N][N];
-int bord_key[N][N];//整个棋盘的估值计算值
-
-
-void out(int x,int y) {
-	if(bord[x][y] == 0) putchar(' ');
-	else if(bord[x][y] == 1) putchar('A'); //黑子 
-	else if(bord[x][y] == -1) putchar('B'); //白子 
+void init() {
+    printf("输入1或者2进行选择\n1，AI执黑先行\n2，玩家执黑先行\n");
+    int s;
+    scanf("%d", &s);
+    if (s != 1 && s != 2)return init();
+    if(s == 1) ai_ = 1;
+    else ai_ = 0;
+    for(int i = 0;i < N; ++i)
+        for(int j = 0;j < N; ++j) bord[i][j] = 0;
+    IS_END = false;
 }
 
-void init() {//棋盘初始化 
-	for(int i = 1;i < N; ++i) {
-		for(int j = 1;j < N; ++j) {
-			bord[i][j] = 0;		
-		}
-	}
+bool is_inbord(int x,int y) {
+    if(x < 0 || x >= N || y < 0 || y >= N) return false;
+    return true;
 }
 
-void display() {//显示棋盘 
-	system("cls");
-	for(int i = 1;i < N; ++i) {
-		for(int j = 1;j < N; ++j) {
-			out(i,j);
-			putchar(' ');
-		}
-		puts("");
-	}
-	puts("-------------------------------");
-	for(int i = 1;i < N; ++i) {
-		for(int j = 1;j < N; ++j) {
-			printf("%d\t",bord_key[i][j]);
-		}
-		puts("");
-	}
-//	for(int k = 1;k < N; ++k) printf("--");
-//	putchar('\n');
-//	for(int i = 1;i < N; ++i) {
-//		putchar('|');
-//		for(int j = 1;j < N; ++j) {
-//			out(i,j);
-//			putchar('|');
-//		}
-//		putchar('\n');
-//		for(int k = 1;k < N ; ++k) printf("--");
-//		putchar('\n');
-//	}
+bool can_luozi(int x,int y) {
+    if(!is_inbord(x,y)) return false;
+    if(bord[x][y] != 0) return false;
+    return true;
 }
 
-//int check(int x,int y) {
-//	for(int i = 1;i < N; ++i) {
-//		int wh = 0,bl = 0;
-//		int wh_row = 0,bl_row = 0; 
-//		for(int j = 1;j < N; ++j) { // 水平和垂直检查 
-//			if(bord[j][i] == 'O') { //竖直方向 
-//				if(bord[j][i - 1] == 'O') bl_row++;
-//				else bl_row = 1;
-//			}else if(bord[j][i] == 'X') {
-//				if(bord[j][i - 1] == 'X') wh_row++;
-//				else wh_row = 1;
-//			}
-//			else wh_row = bl_row = 0;
-//			
-//			if(bord[i][j] =='O') {//水平方向 
-//				if(bord[i][j - 1] == 'O') bl++;
-//				else bl = 1;
-//			}
-//			else if(bord[i][j] == 'X') {
-//				if(bord[i][j - 1] == 'X') wh++;
-//				else wh = 1;
-//			}
-//			else wh = bl = 0;
-//			if(wh == 5 || wh_row == 5) return wwin;
-//			if(bl == 5 || bl_row == 5) return bwin;
-//		}
-//		
-//		for(int i = 1;i < N - 5; ++i) {
-//			int wh_row = 0,bl_row = 0;
-//			int wh_line = 0,bl_line = 0;
-//			for(int j = 1,k = i;j < N - i; ++j,++k) {
-//				
-//			}
-//		}
-//	}
-//	return noover;
-//}
-
-int evaluate_attack(int x,int y,int c) { //进攻估值函数 
-	int i = x,j = y;
-	int ans = 0; 
-	
-	//垂直 
-	int cnt = 0;
-	if(i + 1 < N) {
-		i++;
-	}
-	while(i < N && bord[i][j] == c) {//往下找 
-		i++;
-		cnt++;
-	}
-	i = x;
-	if(i > 1) {
-		i--;
-	}
-	while(i >= 1 && bord[i][j] == c) {//网上找 
-		i--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//水平方向
-	i = x,j = y;
-	cnt = 0;
-	if(j + 1 < N) {
-		j++;
-	}
-	while(j < N && bord[i][j] == c) { //往右找 
-		j++;
-		cnt++;
-	}
-	j = y;
-	if(j > 1) {
-		j--;
-	}
-	while(j >= 1 && bord[i][j] == c) {
-		j--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//从左上往右下 
-	cnt = 0; 
-	i = x,j = y;
-	if(i > 1 && j > 1) {
-		i--,j--;
-	}
-	while(i >= 1 && j >= 1 && bord[i][j] == c) { //往左上找 
-		i--,j--;
-		cnt++;
-	}
-	
-	i = x,j = y;
-	if(i + 1 < N && j + 1 < N) {
-		i++,j++;
-	}
-	while(i < N && j < N && bord[i][j] == c) { //往右下找 
-		i++,j++;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//从右上往左下
-	cnt = 0;
-	i = x,j = y;
-	if(i > 1 && j + 1 < N) {
-		i--,j++;
-	} 
-	while(i >= 1 && j < N && bord[i][j] == c) {
-		i--,j++;
-		cnt++;
-	}
-	i = x,j = y;
-	if(i + 1 < N && j > 1) {
-		i++,j--;
-	}
-	while(i < N && j >= 1 && bord[i][j] == c) {
-		i++,j--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	int des = 0;
-	
-	if((x == 1 || x == N - 1 || y == 1 || y == N - 1 ) && ans <= 3) des = 999999;
-	
-	
-	return max(0,attack_key[min(ans,5)]);
-//	int i = x,j = y;
-//	bord[i][j] = c;
-//	int ans = 0;
-//	//竖直方向的连续长度 
-//	int cnt = 0;
-//	while(i >= 1 && bord[i][j] == c) {//网上找 
-//		cnt++;
-//		i--;
-//	}
-//	i = x;
-//	while(i < N && bord[i][j] == c) {//往下找 
-//		cnt++;
-//		i++;
-//	}
-//	ans = max(ans,cnt);
-//	//水平方向的连续长度 
-//	i = x;
-//	cnt = 0;
-//	while(j >= 1 && bord[i][j] == c) {//网左找 
-//		cnt++;
-//		j--;
-//	}
-//	while(j < N && bord[i][j] == c) {//往右找 
-//		cnt++;
-//		j++;
-//	}
-//	ans = max(ans,cnt);
-//	
-//	//正对角线方向 
-//	cnt = 0;
-//	i = x,j = y; 
-//	while(i >= 1 && j >=1 && bord[i][j] == c) {//自右下往左上找 
-//		cnt++;
-//		i--,j--;
-//	}
-//	ans = max(ans,cnt);
-//	i = x,j = y;
-//	while(i < N && j < N && bord[i][j] == c) {//自左上往右下找
-//		cnt++;
-//		i++,j++;
-//	}
-//	ans = max(ans,cnt);
-//	
-//	
-//	//逆对角线方向 
-//	i = x,j = y;
-//	cnt = 0;
-//	while(i >= 1 && j < N && bord[i][j] == c) {//自左下往右上找
-//		cnt++;
-//		i--,j++;
-//	}
-//	while(i < N && j >= 1 && bord[i][j] == c) {//自右上往左下找
-//		cnt++;
-//		i++,j--; 
-//	}
-//	ans = max(ans,cnt);
-//	bord[x][y] = 0;
-//	return attack_key[min(ans,5)];//返回一个计算(i,j)落点的价值，不考虑33，44，长连禁手等规则 
+bool issame(int x,int y,int k) {
+    if(!is_inbord(x,y)) return false;
+    return bord[x][y] == k || bord[x][y] + k == 0;
 }
 
-int evaluate_defense(int x,int y,int c) {
-	int i = x,j = y;
-	int ans = 0; 
-	
-	//垂直 
-	int cnt = 0;
-	if(i + 1 < N) {
-		i++;
-	}
-	while(i < N && bord[i][j] == -c) {//往下找 
-		i++;
-		cnt++;
-	}
-	i = x;
-	if(i > 1) {
-		i--;
-	}
-	while(i >= 1 && bord[i][j] == -c) {//往上找 
-		i--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//水平方向
-	i = x,j = y;
-	cnt = 0;
-	if(j + 1 < N) {
-		j++;
-	}
-	while(j < N && bord[i][j] == -c) { //往右找 
-		j++;
-		cnt++;
-	}
-	j = y;
-	if(j > 1) {
-		j--;
-	}
-	while(j >= 1 && bord[i][j] == -c) {
-		j--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//从左上往右下 
-	cnt = 0; 
-	i = x,j = y;
-	if(i > 1 && j > 1) {
-		i--,j--;
-	}
-	while(i >= 1 && j >= 1 && bord[i][j] == -c) { //往左上找 
-		i--,j--;
-		cnt++;
-	}
-	
-	i = x,j = y;
-	if(i + 1 < N && j + 1 < N) {
-		i++,j++;
-	}
-	while(i < N && j < N && bord[i][j] == -c) { //往右下找 
-		i++,j++;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	
-	//从右上往左下
-	i = x,j = y;
-	cnt = 0;
-	if(i > 1 && j + 1 < N) {
-		i--,j++;
-	} 
-	while(i >= 1 && j < N && bord[i][j] == -c) {
-		i--,j++;
-		cnt++;
-	}
-	i = x,j = y;
-	if(i + 1 < N && j > 1) {
-		i++,j--;
-	}
-	while(i < N && j >= 1 && bord[i][j] == -c) {
-		i++,j--;
-		cnt++;
-	}
-	ans = max(ans,cnt);
-	int des = 0;
-	if((x == 1 || x == N - 1 || y == 1 || y == N - 1 ) && ans < 4) des = 9999999;
-	return max(defense_key[min(ans,5)] - des,0);
+bool sum_num_of_same(int x,int y,int k) {
+    int i = x + dx[k],j = y + dy[k];
+    int sum = 0;
+    int color = bord[x][y];
+    if(color == 0) return 0; //如果当前点为空直接返回0
+    if(issame(i,j,color)) sum++,i+=dx[k],j+=dy[k];
+    return sum;
+}
+
+bool is_end(int x,int y) {
+    for(int k = 0;k < 4; ++k)
+        if(sum_num_of_same(x,y,k) + sum_num_of_same(x,y,k + 4) >= 4) IS_END = true;
+    return IS_END; //不考虑禁手
 }
 
 
-void bord_evaluate(int c) {//对整个棋盘进行估值计算,当前计算棋子为C 
-	for(int i = 1;i < N; ++i) {
-		for(int j = 1;j < N; ++j) {
-			if(bord[i][j] == 0) bord_key[i][j] = evaluate_attack(i,j,c) + evaluate_defense(i,j,c);
-			else bord_key[i][j] = -1;
-		}
-	}
-}
-
-pair<int,int> DFS(int c) {
-	pair<int,int> ans;
-	ans.first = N/2,ans.second = N/2;
-	int k = 0;
-	bord_evaluate(c);
-	for(int i = 1;i < N; ++i) {
-		for(int j = 1;j < N; ++j) {
-			if(bord_key[i][j] > k) {
-				ans.first = i;
-				ans.second = j;
-				k = bord_key[i][j];
-			}
-		}
-	}
-	return ans;
-}
-
-
-void play() {
-	int x,y;
-	scanf("%d%d",&x,&y);
-	x++,y++;
-	bord[x][y] = -own;
-}
-
-
-int main()
-{
-	int seed;
-	int op;
-	int blk_x,blk_y;
-	int whit_x,whit_y;
-	//scanf("%d",seed);
-	int col,row;
-	//scanf("%d%d",&col,row);
-	
-	scanf("%d",&op);
-	if(op == 1) {
-		own = 1;
-		while(true) {
-			pair<int,int> loc = DFS(own);
-			bord[loc.first][loc.second] = own;
-			display();
-			printf("当前电脑落子 X = %d ，Y = %d\n",loc.first-1,loc.second-1);
-			//printf("%d %d\n",loc.first-1,loc.second-1);
-			play();
-			//fflush(stdout);
-		}
+//----------------------------------------------------------------------------------------------分割线  
+//这个范围内是进攻函数 
+int live2(int x,int y,int color) {
+	int key = bord[x][y],sum = 0;
+	for(int k = 0,i = 1;k < 4; ++k) {
+		int loc = 1;
+		int fg = 2;
+		if()
 		
-//		scanf("%d%d",&blk_x,&blk_y);
+	}
+}
+
+int live3(int x,int y,int color) {//计算[x、y]点落子成活三个数
+    int sum = 0;
+    for(int k = 0,i = 1;k < 4; ++k) {//四个方向寻找活三
+        int loc = 1;
+        int fg = 2;//表示能构成活三的可能
+        //正方向找过去
+        for(i = 1;issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+        i++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+        //反方向找过去
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+        i++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+        if(loc == 3 && fg > 0) //构成活三
+            sum++;
+    }
+    return sum;
+}
+
+int live4(int x,int y,int color) {//落子成活四的个数
+    int sum = 0;
+    for(int k = 0,i = 1;k < 4;++k) {
+        int loc = 1;
+        for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+
+        if(loc == 4) sum++;
+    }
+    return sum;
+}
+
+int cheng5(int x,int y,int color) {//落子成5的个数
+    int sum = 0;
+    for(int k = 0,i = 1;k < 4;++k) {
+        int loc = 1;
+        for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        if(loc == 5) sum++;
+    }
+    return sum;
+}
+
+int rush4(int x,int y,int color) {//落子成冲4的个数
+    int sum = 0;
+    for(int k = 0,i = 1;k < 4; ++k) {//四个方向寻找活三
+        int loc = 1;
+        int fg = 2;//表示能构成活三的可能
+        //正方向找过去
+        for(i = 1;issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+        //反方向找过去
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+
+        if(loc == 4 && fg > 0) //构成活三
+            sum++;
+    }
+    return sum;
+}
+//----------------------------------------------------------------------------------------------分割线  
+
+void go(int x,int y,int color) {
+    bord[x][y] = color;//落子
+    if(is_end(x,y)) {
+        if(ai_ == 1 && color == 1 || ai_ == 0 && color == 2) printf("AI胜利");
+        else printf("玩家胜利");
+    }
+    printf("落子  x = %d, y = %d\n",x,y);
+}
+
+int fenshu(int x,int y,int color) {
+    //if(ban(x,y)) return 0;//如果是禁手返回0分
+    if(is_end(x,y)) { //如果能直接结束游戏，那么直接返回最高权值
+        return 10000;
+    }
+    int rating = live4(x,y,color) * 1000 + live3(x,y,color) * 500 + rush4(x,y,color) * 100;
+    for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 10;//查看当前落子的周围八个位置，如果能落子就加10分
+    return rating;//返回计算分数
+}
+
+//目前的AI不考虑禁手
+
+int AI_3(int kk,int color) {
+    int loc_key = -100000,temp;
+    for(int i = 0;i  < N; ++i) {
+        for(int j = 0;j < N; ++j) {
+            if(!can_luozi(i,j)) continue;
+            bord[i][j] = color;
+            temp = fenshu(i,j,color);
+            if(temp == 0) {//避开无效点
+                bord[i][j] = 0;
+                continue;
+            }
+            if(temp  == 10000) {
+                bord[i][j] = 0;
+                return 10000;
+            }
+            bord[i][j] = 0;
+            if(temp - kk * 2 > loc_key) { //第三层博弈树取极大值
+                loc_key = temp - kk * 2;
+            }
+        }
+    }
+    return loc_key;
+}//第三层AI
+
+int AI_2(int color) {
+    int loc_key = 100000,temp;
+    for(int i = 0;i < N; ++i) {
+        for(int j = 0;j < N; ++j) {
+            if(!can_luozi(i,j)) continue; //不能落子
+            bord[i][j] = color;
+            temp = fenshu(i,j,color);
+            if(temp == 0) {//避开无效点
+                bord[i][j] = 0;
+                continue;
+            }
+            if(temp == 10000) {//如果对于第二层找到了必胜点，那么返回负值
+                bord[i][j] = 0;
+                return -10000;
+            }
+            temp = AI_3(temp,3 - color);
+            bord[i][j] = 0;
+            if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
+        }
+    }
+    return loc_key;
+}//第二层AI
+
+pair<int,int> AI_1(int color) {
+    if(bord[7][7] == 0) return pair<int,int>(7,7); //如果天元没有落子，那么落子天元
+    int loc_key = -100000,keyi,keyj,temp;
+    for(int i = 0;i < N; ++i) {
+        for(int j = 0;j < N; ++j) {
+            if(!can_luozi(i,j)) continue;
+            bord[i][j] = color;
+            temp = fenshu(i,j,color);
+            if(temp == 0) { //剪枝，避开无效点
+                bord[i][j] = 0;
+                continue;
+            }
+            if(temp == 10000) {
+                bord[i][j] = 0;
+                return pair<int, int>(i, j); //如果已经找到必胜点，那么直接返回当前的值
+            }
+            temp = AI_2(3 - color);
+            bord[i][j] = 0;
+            if(temp > loc_key) {//第一层博弈树取极大
+                loc_key = temp;
+                keyi = i,keyj = j;
+            }
+        }
+    }
+    printf("loc_key = %d,x = %d,y = %d\n",loc_key,keyi,keyj);
+    return pair<int,int> (keyi,keyj);
+}//第一层AI
+
+void draw() {
+	printf("\n\n");
+	printf(" ");
+	for(int i = 0;i < N; ++i) printf(" %d ",i);
+	puts("");
+	for(int i = 0;i < N; ++i) {
+		printf("%d ",i);
+		for(int j = 0;j < N; ++j) {
+			if(bord[i][j] == 1) printf("X ");
+			else if(bord[i][j] == 2) printf("O ");
+			else printf("  ");
+		}
+		puts("");
+	}
+	printf("\n\n");
+}
+
+void play(int color) {
+	int x,y;
+	scanf("%d %d",&x,&y);
+	go(x,y,color);
+}
+int main() {
+    init();
+    if(ai_) {
+	    while(!IS_END) {
+	    	pair<int,int> aiai = AI_1(1);
+			go(aiai.first,aiai.second,1);
+			draw();
+	    	play(2);
+		}
 	}
 	else {
-		own = -1;
-		while(true) {
-			play();
-			pair<int,int> loc = DFS(own);
-			bord[loc.first][loc.second] = own;
-			display();
-			printf("当前电脑落子 X = %d ，Y = %d\n",loc.first-1,loc.second-1);
-			if(loc.first == 3 && loc.second == 6) {
-				puts("YES");
-			}
-			//printf("%d %d\n",loc.first-1,loc.second-1);
-			//fflush(stdout);
+		while(!IS_END) {
+			play(1);
+			pair<int,int> aiai = AI_1(2);
+			go(aiai.first,aiai.second,2);
+			draw();
 		}
 	}
-	
-	
-	
-	return 0;
- } 
+}
+
+
