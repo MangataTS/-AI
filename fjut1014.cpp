@@ -44,7 +44,12 @@ int dx[8] = {0,-1,-1,-1,0,1,1,1};
 int dy[8] = {-1,-1,0,1,1,1,0,-1};
 
 void init() {
-    printf("输入1或者2进行选择\n1，AI执黑先行\n2，玩家执黑先行\n");
+	int seed;
+    scanf("%d",&seed);
+    srand(seed);
+    int col,row;
+    scanf("%d%d",&col,&row);
+//    printf("输入1或者2进行选择\n1，AI执黑先行\n2，玩家执黑先行\n");
     int s;
     scanf("%d", &s);
     if (s != 1 && s != 2)return init();
@@ -101,22 +106,23 @@ int live2(int x,int y,int color) {//目前粗略判断一下
 	int sum = 0;
 	for(int k = 0,i = 1;k < 4; ++k) {
 		int loc = 1;
+		int fg = 2;
 		if(is_inbord(x + dx[k],y + dy[k]) && is_inbord(x + dx[k + 4],y + dy[k + 4]) && bord[x + dx[k]][y + dy[k]] == color && bord[x + dx[k + 4]][y + dy[k + 4]] == color) {
 			continue;
 		}
 		else if(is_inbord(x + dx[k],y + dy[k]) && bord[x + dx[k]][y + dy[k]] == color) {
 			int kong = 0;
-			for(int i = 1;is_inbord(x + dx[k] * i,y + dy[k] * i) && issame(x + dx[k] * i,y + dy[k] * i,0) && kong < 3; ++i) kong++;
-			for(int i = -1; is_inbord(x + dx[k] * i,y + dy[k] * i) && issame(x + dx[k] * i,y + dy[k] * i,0) && kong < 3;--i) kong++;
+			for(int i = 1;is_inbord(x + dx[k] * i,y + dy[k] * i) && issame(x + dx[k] * i,y + dy[k] * i,0); ++i) kong++;
+			for(int i = -1; is_inbord(x + dx[k] * i,y + dy[k] * i) && issame(x + dx[k] * i,y + dy[k] * i,0);--i) kong++;
 			if(kong >= 3) sum++;
 		}
 		else if(is_inbord(x + dx[k],y + dy[k]) && bord[x + dx[k + 4]][y + dy[k + 4]] == color) {
             int kong = 0;
             for (int i = 1;
-                 is_inbord(x + dx[k] * i, y + dy[k] * i) && issame(x + dx[k] * i, y + dy[k] * i, 0) && kong < 3; ++i)
+                 is_inbord(x + dx[k] * i, y + dy[k] * i) && issame(x + dx[k] * i, y + dy[k] * i, 0); ++i)
                 kong++;
             for (int i = -1;
-                 is_inbord(x + dx[k] * i, y + dy[k] * i) && issame(x + dx[k] * i, y + dy[k] * i, 0) && kong < 3; --i)
+                 is_inbord(x + dx[k] * i, y + dy[k] * i) && issame(x + dx[k] * i, y + dy[k] * i, 0); --i)
                 kong++;
             if (kong >= 3) sum++;
         }
@@ -131,19 +137,19 @@ int live3(int x,int y,int color) {//计算[x、y]点落子成活三个数
         int fg = 2;//表示能构成活三的可能
         //正方向找过去
         for(i = 1;issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
-//        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
-//        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
-//        i++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+        i++;
         if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
         //反方向找过去
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-//        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
-//        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
-//        i++;
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
+        i++;
         if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
-        if(loc == 3 && fg == 2) //构成活三
+        if(loc == 3 && fg > 0) //构成活三
             sum++;
     }
     return sum;
@@ -200,25 +206,24 @@ int rush4(int x,int y,int color) {//落子成冲4的个数
 
 void go(int x,int y,int color) {
     bord[x][y] = color;//落子
-    if(ai_ == 1 && color == 1 || ai_ == 0 && color == 2)
-    	printf("AI落子    x = %d, y = %d\n",x,y);
-    else 
-    	printf("玩家落子  x = %d, y = %d\n",x,y);
-    if(is_end(x,y)) {
-        if(ai_ == 1 && color == 1 || ai_ == 0 && color == 2) printf("AI胜利\n");
-        else printf("玩家胜利\n");
-        return ;
-    }
-    
+//    if(is_end(x,y)) {
+//        if(ai_ == 1 && color == 1 || ai_ == 0 && color == 2) printf("AI胜利\n");
+//        else printf("玩家胜利\n");
+//        return ;
+//    }
+//    if(ai_ == 1 && color == 1 || ai_ == 0 && color == 2)
+//    	printf("AI落子    x = %d, y = %d\n",x,y);
+//    else 
+//    	printf("玩家落子  x = %d, y = %d\n",x,y);
 }
 
 int fenshu(int x,int y,int color) {
     //if(ban(x,y)) return 0;//如果是禁手返回0分
     if(is_end(x,y)) { //如果能直接结束游戏，那么直接返回最高权值
     	IS_END = false;
-        return 100000;
+        return 10000;
     }
-    int rating =cheng5(x,y,color) * 2000 + live2(x,y,color) * 50  + live4(x,y,color) * 1000 + live3(x,y,color) * 500 +rush4(x,y,color) * 100;
+    int rating =cheng5(x,y,color) * 2000 + live2(x,y,color) * 50  + live4(x,y,color) * 1000 + live3(x,y,color) * 800 +rush4(x,y,color) * 100;
     for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 10;//查看当前落子的周围八个位置，如果能落子就加10分
     return rating;//返回计算分数
 }
@@ -241,8 +246,8 @@ int AI_3(int kk,int color) {
                 return 10000;
             }
             bord[i][j] = 0;
-            if(temp > loc_key) { //第三层博弈树取极大值 - kk * 2 
-                loc_key = temp;
+            if(temp - kk * 2 > loc_key) { //第三层博弈树取极大值
+                loc_key = temp - kk * 2;
             }
         }
     }
@@ -255,7 +260,7 @@ int AI_2(int color) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue; //不能落子
             bord[i][j] = color;
-            temp = fenshu(i,j,color) + fenshu(i,j,3 - color) * 2;
+            temp = fenshu(i,j,color) + fenshu(i,j,3 - color);
             
             if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
             
@@ -263,11 +268,11 @@ int AI_2(int color) {
                 bord[i][j] = 0;
                 continue;
             }
-            if(temp >= 100000) {//如果对于第二层找到了必胜点，那么返回负值
+            if(temp == 10000) {//如果对于第二层找到了必胜点，那么返回负值
                 bord[i][j] = 0;
                 return -10000;
             }
-            temp += AI_3(temp,3 - color);
+//            temp = AI_3(temp,3 - color);
             bord[i][j] = 0;
             if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
         }
@@ -282,7 +287,7 @@ pair<int,int> AI_1(int color) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue;
             bord[i][j] = color;
-            temp = fenshu(i,j,color) + fenshu(i,j,3 - color) * 3;
+            temp = fenshu(i,j,color) + fenshu(i,j,3 - color) * 2;
 //            if(temp > loc_key) {//第一层博弈树取极大
 //                loc_key = temp;
 //                keyi = i,keyj = j;
@@ -291,7 +296,7 @@ pair<int,int> AI_1(int color) {
                 bord[i][j] = 0;
                 continue;
             }
-            if(temp >= 100000) {
+            if(temp == 10000) {
                 bord[i][j] = 0;
                 return pair<int, int>(i, j); //如果已经找到必胜点，那么直接返回当前的值
             }
@@ -303,7 +308,7 @@ pair<int,int> AI_1(int color) {
             }
         }
     }
-    printf("loc_key = %d,x = %d,y = %d\n",loc_key,keyi,keyj);
+//    printf("loc_key = %d,x = %d,y = %d\n",loc_key,keyi,keyj);
     return pair<int,int> (keyi,keyj);
 }//第一层AI
 
@@ -335,7 +340,7 @@ void draw() {
 
 void play(int color) {
 	int x,y;
-	printf("请输入落子坐标\n"); 
+//	printf("请输入落子坐标\n"); 
 	scanf("%d %d",&x,&y);
 	if(is_inbord(x,y) && bord[x][y] == 0)
 		go(x,y,color);
@@ -347,43 +352,30 @@ int main() {
 	    while(!IS_END) {
 	    	pair<int,int> aiai = AI_1(1);
 			go(aiai.first,aiai.second,1);
-			if(IS_END) {
-				draw();
-				system("pause");
-				return 0;
-			}
+			printf("%d\n",aiai.first);
+			printf("%d\n",aiai.second);
+			fflush(stdout);
+//			if(IS_END) {
+//				draw();
+//				system("pause");
+//				return 0;
+//			}
 				
-			draw();
+//			draw();
 	    	play(2);
-	    	if(IS_END) {
-				draw();
-				system("pause");
-				return 0;
-			}
 		}
 	}
 	else {
 		while(!IS_END) {
 			play(1);
-			if(IS_END) {
-				draw();
-				system("pause");
-				return 0;
-			}
 			pair<int,int> aiai = AI_1(2);
 			go(aiai.first,aiai.second,2);
-			draw();
+			printf("%d\n",aiai.first);
+			printf("%d\n",aiai.second);
+			fflush(stdout);
+//			draw();
 		}
 	}
 }
-/*
-7 6
-8 7
-6 7
-8 8
-8 5
-9 4
 
-
- */
 
