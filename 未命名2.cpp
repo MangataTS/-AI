@@ -110,7 +110,7 @@ int menu()
         if(m>15||m<5)
         {
             puts("\n不符合规格嗷，请重新输入 ~(￣▽￣)~ ");
-            Sleep(2000);
+            (2000);
             system("cls");
         }
     }while(m>15||m<5);
@@ -149,15 +149,15 @@ void funny()
     for(int i=0;s[i];++i)
     {
         printf("%c",s[i]);
-        Sleep(50);
-        if(i==21)Sleep(400);
-        if(i==40)Sleep(400);
+        (50);
+        if(i==21)(400);
+        if(i==40)(400);
     }
-    Sleep(600);
+    (600);
     puts("   （￣へ￣） ");
-    Sleep(1000);
+    (1000);
     puts("\n别搞事情嗷  (￣▽￣) ");
-    Sleep(2000);
+    (2000);
     system("cls");
     return ;
 }
@@ -369,7 +369,6 @@ void PM()
 void CM(int cn)
 {
     puts("\n（ =￣ω￣= ）思考中~~\n");
-    Sleep(300);
     get(cn);
     /*
     scanf("%d %d",&p.x,&p.y);//方便调试 
@@ -378,7 +377,6 @@ void CM(int cn)
     pan[p.x][p.y]='o';
     CVis();
     puts("（ =￣ω￣= ）我想到啦！");
-    Sleep(500);
 }
 
 void get(int cn)
@@ -752,23 +750,23 @@ void win(char winner)
     if(winner=='x')
     {
         printf("咦！Σ(っ°Д°)っ\t");
-        Sleep(1000);
+        (1000);
         char S[200]={"好吧，虽然很不想承认...    是我输了!\n"};
         for(int i=0;S[i];++i)
         {
             printf("%c",S[i]);
-            if(i==5||i==25)Sleep(500);
-            Sleep(50);
+            if(i==5||i==25)(500);
+            (50);
         }
-        Sleep(1500);
+        (1500);
         if(Difficult!=6)
         {
             char s[200]={"\n但是！！！  还有更难的嗷  (～￣▽￣)～   \n\n而且 , 通关后可以知道开发者的小故事呢 ~(￣▽￣)~  祝您游戏愉快\n\n"};
             for(int i=0;s[i];++i)
             {
                 printf("%c",s[i]);
-                if(i==10||i==40||i==50||i==92)Sleep(500);
-                Sleep(50);
+                if(i==10||i==40||i==50||i==92)(500);
+                (50);
             }
         }
         else
@@ -787,21 +785,21 @@ void win(char winner)
             for(int i=0;s[i];++i)
             {
                 printf("%c",s[i]);
-                if(s[i]==',')Sleep(500);
-                if(i==223||i==225||s[i]=='.')Sleep(1000);
-                Sleep(50);
+                if(s[i]==',')(500);
+                if(i==223||i==225||s[i]=='.')(1000);
+                (50);
             } 
         }
-        Sleep(1500);
+        (1500);
     }
     if(winner=='o')
     {
         printf("承让!承让！\n\n");
-        Sleep(1000);
+        (1000);
         printf("要不~~~\n\n");
-        Sleep(2000);
+        (2000);
         printf("再来一局试试？ (￣▽￣) \n");
-        Sleep(1000);
+        (1000);
     }
     return ;
 }
@@ -855,7 +853,7 @@ void Game()
             if(PRvis==1)printf("电脑落子：【%d %d】\n",p.x,p.y);
             else printf("电脑落子：【%d %d】\n",p.y,m-p.x-1);
         }
-        Sleep(1000);
+        (1000);
         
         if(special)
         {

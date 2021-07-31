@@ -32,6 +32,7 @@
 using namespace std;
 
 const int N = 15;
+#define juesha 1000000000
 
 int bord[N][N];//  0表示当前为空，1表示黑子，2表示白子
 int ai_ = 1;//ai_ = 1 表示的是AI先手
@@ -125,10 +126,10 @@ bool is_end(int x,int y) {
 //这个范围内是进攻函数    貌似敌人的进攻就是自己的防御 
 int live2(int x,int y,int color) {//目前粗略判断一下 ，落子相邻的活2，也就是连活2 
 	int sum = 0;
-	for(int k = 0,i = 1;k < 4; ++k) {
+	for(int k = 0;k < 4; ++k) {
 		int loc = 1;
 		int kong = 0;
-		if(is_inbord(x + dx[k],y + dy[k]) && is_inbord(x + dx[k + 4],y + dy[k + 4]) && bord[x + dx[k]][y + dy[k]] == color && bord[x + dx[k + 4]][y + dy[k + 4]] == color) {
+		if(is_inbord(x + dx[k],y + dy[k]) && is_inbord(x + dx[k + 4],y + dy[k + 4]) && bord[x + dx[k]][y + dy[k]] != 0 && bord[x + dx[k + 4]][y + dy[k + 4]] != 0) {
 			continue;
 		}
 		else if(is_inbord(x + dx[k],y + dy[k]) && bord[x + dx[k]][y + dy[k]] == color) {
@@ -139,7 +140,7 @@ int live2(int x,int y,int color) {//目前粗略判断一下 ，落子相邻的活2，也就是连活
 		else if(is_inbord(x + dx[k + 4],y + dy[k + 4]) && bord[x + dx[k + 4]][y + dy[k + 4]] == color) {
             for (int i = 2;is_inbord(x + dx[k + 4] * i, y + dy[k + 4] * i) && issame(x + dx[k + 4] * i, y + dy[k + 4] * i, 0) && kong < 4; ++i)
                 kong++;
-            for (int i = -1;is_inbord(x + dx[k] * i, y + dy[k] * i) && issame(x + dx[k] * i, y + dy[k] * i, 0) && kong < 4; --i)
+            for (int i = -1;is_inbord(x + dx[k + 4] * i, y + dy[k + 4] * i) && issame(x + dx[k + 4] * i, y + dy[k + 4] * i, 0) && kong < 4; --i)
                 kong++;
         }
         if(kong >= 4) sum++;
@@ -149,34 +150,46 @@ int live2(int x,int y,int color) {//目前粗略判断一下 ，落子相邻的活2，也就是连活
 
 int die2(int x,int y,int color) {//落子成死二的个数
 	int sum = 0;
-	for(int k = 0,i = 1;k < 4; ++k) {
-		int loc = 0;
-		for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
-		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
-        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
-		if(loc == 1)
+	for(int k = 0;k < 8; ++k) {
+		if(is_inbord(x + dx[k],y + dy[k]) && bord[x + dx[k]][y + dy[k]] == color) {
+			if(is_inbord(x + dx[k] * 2,y + dy[k] * 2) && bord[x + dx[k] * 2][y + dy[k] * 2] != 3 - color) continue;//正方向第二格如果在棋盘内并且不是地方棋子 
+			if(is_inbord(x - dx[k],y - dy[k]) && bord[x - dx[k]][y - dy[k]] != 3 - color) continue; //反方向如果不是地方棋子，并且在棋盘内	
 			sum++;
+		} 
+		
 	} 
 	return sum;
 } 
 
+int mian2(int x,int y,int color) {//计算眠2的数量 
+	int sum = 0;
+	for(int k = 0;k < 8; ++k) {
+		if(is_inbord(x + dx[k],y + dy[k]) && bord[x + dx[k]][y + dy[k]] == color) {
+			if(is_inbord(x + dx[k] * 2,y + dy[k] * 2) && bord[x + dx[k] * 2][y + dy[k] * 2] == 3 - color && is_inbord(x - dx[k],y - dy[k]) && bord[x - dx[k]][y - dy[k]] == 0) sum++;
+			else if(is_inbord(x - dx[k],y - dy[k]) && bord[x - dx[k]][y - dy[k]] == 3 - color && is_inbord(x + dx[k] * 2,y + dy[k] * 2) && bord[x + dx[k] * 2][y + dy[k] * 2] == 0) sum++; 
+			sum++;
+		} 
+		
+	} 
+	return sum;
+}
+
 int live3(int x,int y,int color) {//计算[x、y]点落子成活三个数
-    int sum = 0;
+    int sum = 0;	
     for(int k = 0,i = 1;k < 4; ++k) {//四个方向寻找  连活三
         int loc = 1;
         int fg = 2;//表示能构成活三的可能
         //正方向找过去
         for(i = 1;issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
-        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
-        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位说明构成活三的可能减一
         i++;
 		if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
         //反方向找过去
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
-        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
+        else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位说明构成活三的可能减一
         i--;
 		if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
@@ -209,11 +222,11 @@ int mian3(int x,int y,int color) {//在[x,y]这个位置形成的眠三的数量
         int fg = 2;//表示能构成眠3的可能
         //正方向找过去
         for(i = 1;issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
-        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么fg--
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
         //反方向找过去
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
+        if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么fg--
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
 
         if(loc == 3 && fg == 1) //构成眠3
@@ -226,9 +239,9 @@ int die3(int x,int y,int color) {//落子成死三的个数
 	int sum = 0;
 	for(int k = 0,i = 1;k < 4; ++k) {
 		int loc = 0; 
-		for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+		for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 3; ++i) loc++;
 		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
-        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 3; --i) loc++;
 		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
 		if(loc == 2)//如果满足 死三的条件 
 			sum++; 
@@ -239,16 +252,16 @@ int die3(int x,int y,int color) {//落子成死三的个数
 int live4(int x,int y,int color) {//落子成活四的个数 目前只计算了连活4 ，跳活4还有待计算 
     int sum = 0;
     for(int k = 0,i = 1;k < 4;++k) {//连活4 
-        int loc = 1;
-        for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+        int loc = 0;
+        for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 4; ++i) loc++;
         if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
 
-        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 4; --i) loc++;
         if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) continue;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) continue;//如果当前位置不是空位就continue
 
-        if(loc == 4) sum++;
+        if(loc == 3) sum++;
     }
     return sum;
 }
@@ -257,9 +270,9 @@ int die4(int x,int y,int color) {//落子成死四的个数
 	int sum = 0;
 	for(int k = 0,i = 1;k < 4; ++k) {
 		int loc = 0;
-		for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
+		for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 4; ++i) loc++;
 		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
-        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
+        for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color) && loc < 4; --i) loc++;
 		if(is_inbord(x + dx[k] * i,y + dy[k] * i) && bord[x + dx[k] * i][y + dy[k] * i] != 3 - color) continue; //如果下一个落子在棋盘内，并且棋盘下一个位置不为另一个棋子 
 		if(loc == 3)
 			sum++;
@@ -273,7 +286,7 @@ int cheng5(int x,int y,int color) {//落子成5的个数
         int loc = 1;
         for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-        if(loc == 5) sum++;
+        if(loc == 5) return ++sum;
     }
     return sum;
 }
@@ -284,7 +297,7 @@ int changlian(int x,int y,int color) {//落子长连的个数
         int loc = 1;
         for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-        if(loc >= 5) sum++;
+        if(loc >= 5) return ++sum;
     }
     return sum;
 } 
@@ -302,7 +315,6 @@ int rush4(int x,int y,int color) {//落子成单冲4的个数
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
         if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) fg--;//如果出了边界那么直接continue；
         else if(bord[x + dx[k] * i][y + dy[k] * i] != 0) fg--;//如果当前位置不是空位说明构成活三的可能减一
-
         if(loc == 4 && fg == 1) //构成单冲4
             sum++;
     }
@@ -325,51 +337,30 @@ void go(int x,int y,int color) {
 }
 
 int fenshu(int x,int y,int color) {//对当前[x,y]坐标落子的价值初步评估 
-    //if(ban(x,y)) return 0;//如果是禁手返回0分
-    if(is_end(x,y)) { //如果能直接结束游戏，那么直接返回最高权值
-    	IS_END = false;
-        return 10000000;
-    }
-    
     int live3_ = live3(x,y,color);
-    if(changlian(x,y,color) >= 1 || cheng5(x,y,color) >= 1) { //长连和成五返回 
-    	return 100000;
+    int rating = 0; 
+    if(changlian(x,y,color) >= 1 || cheng5(x,y,color) >= 1) { //长连和成五返回  
+    	return 1000000000;
 	}
-	else if(live4(x,y,color) >= 1 || rush4(x,y,color) >= 2 || (rush4(x,y,color) >= 1 && live3_ >= 1)) {
-		return 10000;
+	else if(live4(x,y,color) >= 1 || rush4(x,y,color) >= 2 || (rush4(x,y,color) >= 1 && live3_ >= 1) || live3_ >= 2) { //落子形成活四或者两个冲4或者一个冲4和一个活三也就是四三 ，或者双活三 
+		return 1000000000;
 	}
-	else if(live3_ >= 2) {
-		return 5000;
+	else if(live3_ >= 1 && mian3(x,y,color) >= 1) { //活3+眠3 
+		rating = 5000;
 	}
-	else if(live3_ >= 1 && mian3(x,y,color) >= 1) {
-		return 1000;
+	else if(live3_ >= 1 || rush4(x,y,color) >= 1) {//活三或者冲4 
+		rating = 500;
 	}
-	else if(live3_ >= 1) {
-		return 500;
+	else if(live2(x,y,color) >= 2) {//双活2 
+		rating = 50;
 	}
-	else if(live2(x,y,color) >= 2) {
-		return 100;
-	}
-	else if(mian3(x,y,color) >= 1) {
-		return 50;
-	}
-	else if(live2(x,y,color) >= 1) {
-		return 5; 
+	else if(mian3(x,y,color) >= 1 || live2(x,y,color) >= 1) {//眠3或活2 
+		rating = 5;
 	}
 	else if(die4(x,y,color) >= 1 || die3(x,y,color) >= 1 || die2(x,y,color)) {//落子成死棋 
-		return -5;
+		rating = -5;
 	}
-
-    int rating = 
-    	changlian(x,y,color) * 5000 +
-		cheng5(x,y,color) * 2000 	+ 
-		live4(x,y,color) * 1000 	+ 
-		live3(x,y,color) * 1000 	+ 
-		rush4(x,y,color) * 500      +
-		live2(x,y,color) * 50  		+ 
-		mian3(x,y,color) * 50       +
-		(die3(x,y,color) + die4(x,y,color)) * (-100);
-    for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 10;//查看当前落子的周围八个位置，如果能落子就加10分,这个算棋势分数 
+    for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 1;//查看当前落子的周围八个位置，如果能落子就加10分,这个算棋势分数 
     return rating + posit_value[x][y];//返回计算分数
 }
 
@@ -382,16 +373,16 @@ int AI_3(int kk,int color) {
             if(!can_luozi(i,j)) continue;
             bord[i][j] = color;
             temp = fenshu(i,j,color) + fenshu(i,j,3 - color);
-            if(temp == 0) {//避开无效点
-                bord[i][j] = 0;
-                continue;
-            }
-            if(temp  == 10000) {
-                bord[i][j] = 0;
-                return 10000;
-            }
+//            if(temp == 0) {//避开无效点
+//                bord[i][j] = 0;
+//                continue;
+//            }
+//            if(temp  == 10000) {
+//                bord[i][j] = 0;
+//                return 10000;
+//            }
             bord[i][j] = 0;
-            if(temp > loc_key) { //第三层博弈树取极大值 - kk * 2 
+            if(temp > loc_key) { //第三层博弈树取极大值
                 loc_key = temp;
             }
         }
@@ -405,19 +396,19 @@ int AI_2(int color) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue; //不能落子
             bord[i][j] = color;
-            temp = fenshu(i,j,color) * 2 + fenshu(i,j,3 - color) * 2;
+            temp = fenshu(i,j,color) + fenshu(i,j,3 - color);// * 2 + fenshu(i,j,3 - color) * 2;
             
 //            if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
             
-            if(temp <= posit_value[i][j] * 4) {//避开无效点
-                bord[i][j] = 0;
-                continue;
-            }
-            if(temp >= 10000000) {//如果对于第二层找到了必胜点，那么返回负值
-                bord[i][j] = 0;
-                return -10000000;
-            }
-//            temp += AI_3(temp,3 - color);
+//            if(temp <= posit_value[i][j] * 4) {//避开无效点
+//                bord[i][j] = 0;
+//                continue;
+//            }
+//            if(temp >= 10000000) {//如果对于第二层找到了必胜点，那么返回负值
+//                bord[i][j] = 0;
+//                return -10000000;
+//            }
+//            temp = AI_3(temp,3 - color);
             bord[i][j] = 0;
             if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
         }
@@ -432,19 +423,19 @@ pair<int,int> AI_1(int color) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue;
             bord[i][j] = color;
-            temp = fenshu(i,j,color) * 3 + fenshu(i,j,3 - color) * 3;
+//            temp = fenshu(i,j,color);// * 3 + fenshu(i,j,3 - color) * 3;
 //            if(temp > loc_key) {//第一层博弈树取极大
 //                loc_key = temp;
 //                keyi = i,keyj = j;
 //            }
-            if(temp <= 6 * posit_value[i][j]) { //剪枝，避开无效点
-                bord[i][j] = 0;
-                continue;
-            }
-            if(temp >= 10000000) {
-                bord[i][j] = 0;
-                return pair<int, int>(i, j); //如果已经找到必胜点，那么直接返回当前的值
-            }
+//            if(temp <= 6 * posit_value[i][j]) { //剪枝，避开无效点
+//                bord[i][j] = 0;
+//                continue;
+//            }
+//            if(temp >= 10000000) {
+//                bord[i][j] = 0;
+//                return pair<int, int>(i, j); //如果已经找到必胜点，那么直接返回当前的值
+//            }
             temp += AI_2(3 - color);
             bord[i][j] = 0;
             if(temp > loc_key) {//第一层博弈树取极大
@@ -493,19 +484,22 @@ void play(int color) {
 }
 int main() {
     init();
+    int cout = 0;
     if(ai_) {
 	    while(!IS_END) {
 	    	pair<int,int> aiai = AI_1(1);
 			go(aiai.first,aiai.second,1);
+			cout++;
 			if(IS_END) {
 				draw();
 				system("pause");
-				return 0;
+				break;
 			}
 				
 			draw();
 	    	play(2);
-	    	if(IS_END) {
+	    	cout++;
+			if(IS_END) {
 				draw();
 				system("pause");
 				break;
@@ -525,7 +519,7 @@ int main() {
 			draw();
 		}
 	}
-	
+	printf("\n总共走了%d步\n",cout);
 	puts("\n-------------game over------------------");
 	puts("-------------分割线------------------");
 	puts("-------------分割线------------------");
