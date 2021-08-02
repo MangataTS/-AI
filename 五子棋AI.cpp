@@ -32,7 +32,21 @@
 using namespace std;
 
 const int N = 15;
-#define juesha 1000000000
+#define INF 10000000
+
+const int NUM = 10;
+
+struct Node {
+	int x,y,point;
+}; 
+
+bool cmpbig(Node a, Node b) {
+	return a.point > b.point;
+}
+bool cmpsmall(Node a, Node b) {
+	return a.point < b.point;
+}
+
 
 int bord[N][N];//  0表示当前为空，1表示黑子，2表示白子
 int ai_ = 1;//ai_ = 1 表示的是AI先手
@@ -201,15 +215,17 @@ int live3(int x,int y,int color) {//计算[x、y]点落子成活三个数
     	int kong = 0;
     	int feikong = 0;
     	if(!is_inbord(x + dx[k + 4],y + dy[k + 4])) continue; // 不在边界 
-    	else if(bord[x + dx[k + 4]][y + dy[k + 4]] != 0) continue;//反方向不是空的 
-    	for(int i = 1;i <= 4; ++i) {		//往这个方向看4格 
+    	else if(bord[x + dx[k + 4]][y + dy[k + 4]] != color) continue;//反方向不是color
+    	if(!is_inbord(x + dx[k + 4] * 2,y + dy[k + 4] * 2)) continue; // 不在边界 
+    	else if(bord[x + dx[k + 4] * 2][y + dy[k + 4] *2] == 0) continue;//反方向不是空的 
+    	for(int i = 1;i <= 3; ++i) {		//往这个方向看3格 
     		if(!is_inbord(x + dx[k] * i,y + dy[k] * i)) break;
     		if(bord[x + dx[k] * i][y + dy[k] * i] == 3 - color) //和敌方棋子相等 
 				break;
 			if(bord[x + dx[k] * i][y + dy[k] * i] == color) feikong++;
 			else kong++;
 		}
-		if(kong == 2 && feikong == 2) //是跳活三 
+		if(kong == 2 && feikong == 1) //是跳活三 
 			sum++;
 	}
     return sum;
@@ -297,7 +313,7 @@ int changlian(int x,int y,int color) {//落子长连的个数
         int loc = 1;
         for(i = 1; issame(x + dx[k] * i,y + dy[k] * i,color); ++i) loc++;
         for(i = -1;issame(x + dx[k] * i,y + dy[k] * i,color); --i) loc++;
-        if(loc >= 5) return ++sum;
+        if(loc > 5) return ++sum;
     }
     return sum;
 } 
@@ -337,122 +353,195 @@ void go(int x,int y,int color) {
 }
 
 int fenshu(int x,int y,int color) {//对当前[x,y]坐标落子的价值初步评估 
+//	int win5 = 0, alive4 = 0, die4 = 0, lowdie4 = 0, alive3 = 0,
+//		die3 = 0, tiao3 = 0, alive2 = 0, lowalive2 = 0, die2 = 0, nothing = 0;
+	
+//	win5 = cheng5(x,y,color) + changlian(x,y,color);
+//	alive4 = live4(x,y,color);
+//	die4 = deie
     int live3_ = live3(x,y,color);
-    int rating = 0; 
+    int rating; 
     if(changlian(x,y,color) >= 1 || cheng5(x,y,color) >= 1) { //长连和成五返回  
-    	return 1000000000;
+    	return 100000;
 	}
 	else if(live4(x,y,color) >= 1 || rush4(x,y,color) >= 2 || (rush4(x,y,color) >= 1 && live3_ >= 1) || live3_ >= 2) { //落子形成活四或者两个冲4或者一个冲4和一个活三也就是四三 ，或者双活三 
-		return 1000000000;
+		return 10000;
 	}
-	else if(live3_ >= 1 && mian3(x,y,color) >= 1) { //活3+眠3 
-		rating = 5000;
-	}
-	else if(live3_ >= 1 || rush4(x,y,color) >= 1) {//活三或者冲4 
-		rating = 500;
-	}
-	else if(live2(x,y,color) >= 2) {//双活2 
-		rating = 50;
-	}
-	else if(mian3(x,y,color) >= 1 || live2(x,y,color) >= 1) {//眠3或活2 
-		rating = 5;
-	}
-	else if(die4(x,y,color) >= 1 || die3(x,y,color) >= 1 || die2(x,y,color)) {//落子成死棋 
-		rating = -5;
-	}
-    for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 1;//查看当前落子的周围八个位置，如果能落子就加10分,这个算棋势分数 
-    return rating + posit_value[x][y];//返回计算分数
+	rating = (live3_ + rush4(x,y,color))* 1000 + (mian3(x,y,color) + live2(x,y,color))* 20 +  (die4(x,y,color) + die3(x,y,color) + die2(x,y,color)) * (-10);
+	return rating;
+//	else if(live3_ >= 1 && mian3(x,y,color) >= 1) { //活3+眠3 
+//		rating = 5000;
+//	}
+//	else if(live3_ >= 1 || rush4(x,y,color) >= 1) {//活三或者冲4 
+//		rating = 500;
+//	}
+//	else if(live2(x,y,color) >= 2) {//双活2 
+//		rating = 50;
+//	}
+//	else if(mian3(x,y,color) >= 1 || live2(x,y,color) >= 1) {//眠3或活2 
+//		rating = 5;
+//	}
+//	else if(die4(x,y,color) >= 1 || die3(x,y,color) >= 1 || die2(x,y,color)) {//落子成死棋 
+//		rating = -5;
+//	}
+//    for(int i = 0;i < 8; ++i) if(can_luozi(x + dx[i],y + dy[i])) rating += 1;//查看当前落子的周围八个位置，如果能落子就加10分,这个算棋势分数 
+//    return rating; + posit_value[x][y];//返回计算分数
 }
 
-//目前的AI不考虑禁手
+int jushi_fenshu(int color) {
+	int ans = 0;
+	bool vis[N][N];
+	memset(vis,0,sizeof vis);
+	for(int i = 0;i < N; ++i) {
+		for(int j = 0;j < N; ++j) {
+			if(bord[i][j] != color) continue; 
+			for(int k = 0;k < 8; ++k) {
+				for(int l = 1;l <= 2; ++l) {
+					if(is_inbord(i + dx[k] * l,j + dy[k] * l) && bord[i + dx[k] * l][j + dy[k] * l] == 0 && vis[i + dx[k] * l][j + dy[k] * l] == false) { //在棋盘内并且坐标点为空 
+						ans += fenshu(i + dx[k] * l,j + dy[k] * l,color);
+						vis[i + dx[k] * l][j + dy[k] * l] = true;
+					}
+				}
+			}
+		}
+	}
+	return ans;
+} 
 
-int AI_3(int kk,int color) {
-    int loc_key = -100000,temp;
+//目前的AI不考虑禁手
+int AI_6(int color) {
+	int loc_key = INF,temp;
+    vector<Node> V;
+    for(int i = 0;i < N; ++i) {
+        for(int j = 0;j < N; ++j) {
+            if(!can_luozi(i,j)) continue; //不能落子
+            V.push_back({i,j,fenshu(i,j,3 - color)});
+        }
+    }
+    sort(V.begin(),V.end(),cmpsmall);
+    if(V.size())
+    	return V[0].point;
+    else return 0;
+//    for(int i = 0;i < 8 && i < V.size(); ++i) {
+//    	bord[V[i].x][V[i].y] = color;
+//    	temp = AI_5(3 - color);; //
+//    	bord[V[i].x][V[i].y] = 0;
+//    	if(temp < loc_key) {	//第四层博弈树取极小 
+//            loc_key = temp;
+//        }
+//	}
+//    return loc_key;
+} 
+
+int AI_5(int color) {
+	return jushi_fenshu(color) - jushi_fenshu(3 - color); //+ jushi_fenshu(3-color);
+}
+
+int AI_4(int color) {
+int loc_key = INF,temp;
+    vector<Node> V;
+    for(int i = 0;i < N; ++i) {
+        for(int j = 0;j < N; ++j) {
+            if(!can_luozi(i,j)) continue; //不能落子
+            temp = (fenshu(i,j,color)+ fenshu(i,j,3 - color)); // + fenshu(i,j,3 - color)
+//            if(temp >= 100000) return -100000;
+            V.push_back({i,j,temp});
+        }
+    }
+    sort(V.begin(),V.end(),cmpbig);
+    for(int i = 0,len = V.size();i < NUM && i < len; ++i) { // 最佳落子点 
+    	bord[V[i].x][V[i].y] = color;
+    	temp = AI_5(3 - color);
+    	bord[V[i].x][V[i].y] = 0;
+    	if(temp < loc_key) {	//第四层博弈树取极小
+            loc_key = temp;
+        }
+	}
+    return loc_key;
+}
+
+int AI_3(int color) {
+    int loc_key = -INF,temp;
+    vector<Node> V;
     for(int i = 0;i  < N; ++i) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue;
-            bord[i][j] = color;
-            temp = fenshu(i,j,color) + fenshu(i,j,3 - color);
-//            if(temp == 0) {//避开无效点
-//                bord[i][j] = 0;
-//                continue;
-//            }
-//            if(temp  == 10000) {
-//                bord[i][j] = 0;
-//                return 10000;
-//            }
-            bord[i][j] = 0;
-            if(temp > loc_key) { //第三层博弈树取极大值
-                loc_key = temp;
-            }
+            temp = (fenshu(i,j,color)+ fenshu(i,j,3 - color)); // + fenshu(i,j,3 - color)
+//            if(temp >= 100000) return 100000;
+            V.push_back({i,j,temp});
         }
     }
+    
+    sort(V.begin(),V.end(),cmpbig);
+    for(int i = 0,len = V.size();i < NUM && i < len; ++i) {// 最佳落子点 
+    	bord[V[i].x][V[i].y] = color;
+    	temp = AI_4(3 - color);
+    	bord[V[i].x][V[i].y] = 0;
+    	if(temp > loc_key) {//第三层博弈树取极大
+            loc_key = temp;
+        }
+	}
     return loc_key;
 }//第三层AI
 
 int AI_2(int color) {
-    int loc_key = 100000,temp;
+    int loc_key = INF,temp;
+    vector<Node> V;
     for(int i = 0;i < N; ++i) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue; //不能落子
-            bord[i][j] = color;
-            temp = fenshu(i,j,color) + fenshu(i,j,3 - color);// * 2 + fenshu(i,j,3 - color) * 2;
-            
-//            if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
-            
-//            if(temp <= posit_value[i][j] * 4) {//避开无效点
-//                bord[i][j] = 0;
-//                continue;
-//            }
-//            if(temp >= 10000000) {//如果对于第二层找到了必胜点，那么返回负值
-//                bord[i][j] = 0;
-//                return -10000000;
-//            }
-//            temp = AI_3(temp,3 - color);
-            bord[i][j] = 0;
-            if(temp < loc_key) loc_key = temp; //第二层博弈树取极小值
+            temp = (fenshu(i,j,color) + fenshu(i,j,3 - color)); // + fenshu(i,j,3 - color)
+//            if(temp >= 100000) return -100000;
+            V.push_back({i,j,temp});
         }
     }
+    sort(V.begin(),V.end(),cmpbig);
+    for(int i = 0,len = V.size();i < NUM && i < len; ++i) {// 最佳落子点 
+    	bord[V[i].x][V[i].y] = color;
+    	temp = AI_3(3 - color);
+    	bord[V[i].x][V[i].y] = 0;
+    	if(temp < loc_key) {	//第二层博弈树取极小
+            loc_key = temp;
+        }
+	}
     return loc_key;
 }//第二层AI
 
 pair<int,int> AI_1(int color) {
     if(bord[7][7] == 0) return pair<int,int>(7,7); //如果天元没有落子，那么落子天元
-    int loc_key = -100000,keyi,keyj,temp;
+    int loc_key = -INF,keyi,keyj,temp;
+    vector<Node> V;
     for(int i = 0;i < N; ++i) {
         for(int j = 0;j < N; ++j) {
             if(!can_luozi(i,j)) continue;
-            bord[i][j] = color;
-//            temp = fenshu(i,j,color);// * 3 + fenshu(i,j,3 - color) * 3;
-//            if(temp > loc_key) {//第一层博弈树取极大
-//                loc_key = temp;
-//                keyi = i,keyj = j;
-//            }
-//            if(temp <= 6 * posit_value[i][j]) { //剪枝，避开无效点
-//                bord[i][j] = 0;
-//                continue;
-//            }
-//            if(temp >= 10000000) {
-//                bord[i][j] = 0;
-//                return pair<int, int>(i, j); //如果已经找到必胜点，那么直接返回当前的值
-//            }
-            temp += AI_2(3 - color);
-            bord[i][j] = 0;
-            if(temp > loc_key) {//第一层博弈树取极大
-                loc_key = temp;
-                keyi = i,keyj = j;
-            }
+            temp = (fenshu(i,j,color) + fenshu(i,j,3 - color) * 2); // + fenshu(i,j,3 - color)
+            if(temp >= 100000) return pair<int,int> (i,j);
+            V.push_back({i,j,temp});
         }
     }
+   
+    sort(V.begin(),V.end(),cmpbig);
+    for(int i = 0,len = V.size();i < NUM && i < len; ++i) {// 最佳落子点 
+    	bord[V[i].x][V[i].y] = color;
+    	temp = AI_2(3 - color);
+    	bord[V[i].x][V[i].y] = 0;
+    	if(temp > loc_key) {//第一层博弈树取极大
+            loc_key = temp;
+            keyi = V[i].x,keyj = V[i].y;
+        }
+	}
     printf("loc_key = %d,x = %d,y = %d\n",loc_key,keyi,keyj);
     return pair<int,int> (keyi,keyj);
 }//第一层AI
 
+
+
+
 void draw() {
 	printf("\n\n");
 	printf("         ");
-	printf(" ");
-	for(int i = 0;i < N; ++i) if(i < 10) printf("   %d",i); else printf("  %d",i);
+	printf("   ");
+	for(int i = 0;i < N; ++i) if(i < 10) printf("  %d ",i); else printf("  %d",i);
 	puts("");
 	for(int i = 0;i < N; ++i) {
 		printf("         ");
@@ -465,8 +554,8 @@ void draw() {
 		printf("%d  ",i);
 		else printf("%d ",i);
 		for(int j = 0;j < N; ++j) {
-			if(bord[i][j] == 1) printf("|X  ");
-			else if(bord[i][j] == 2) printf("|O  ");
+			if(bord[i][j] == 1) printf("| X ");
+			else if(bord[i][j] == 2) printf("| O ");
 			else printf("|   ");
 		}
 		puts("");
@@ -483,6 +572,9 @@ void play(int color) {
 	else return play(color);
 }
 int main() {
+	bord[0][5] = 1;
+	printf("%d\n",jushi_fenshu(1));
+	
     init();
     int cout = 0;
     if(ai_) {
@@ -527,12 +619,28 @@ int main() {
 }
 /*
 7 6
+6 6
+5 6
 8 7
+6 5
+8 6
+4 7
+8 3
+8 5
+6 4
+6 2
+8 8
+9 9
+9 7
+10 6
+11 5
+
+
+7 6
 6 7
 8 8
+3 3
 8 5
-9 4
-
 
  */
 
